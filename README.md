@@ -5,7 +5,7 @@ built on NASA's C-MAPSS (Commercial Modular Aero-Propulsion System
 Simulation) turbofan engine degradation dataset. Predicts Remaining Useful
 Life (RUL) from multivariate sensor time-series data.
 
-**Status:** 🚧 In progress — Week 2 of 8 (see [Roadmap](#roadmap))
+**Status:** 🚧 In progress — Week 3 of 8 (see [Roadmap](#roadmap))
 
 ---
 
@@ -38,7 +38,7 @@ then place these files in `data/`:
 ## Setup
 
 ```bash
-git clone https://github.com/953624243086-del/predictive-maintenance-cmapss.git
+git clone https://github.com/yourusername/predictive-maintenance-cmapss.git
 cd predictive-maintenance-cmapss
 pip install -r requirements.txt
 ```
@@ -58,6 +58,16 @@ Trains Random Forest and XGBoost regressors, evaluates with RMSE and the
 official C-MAPSS asymmetric scoring function, saves results to
 `models/baseline_results.json`.
 
+### 3. Train the LSTM model
+```bash
+python src/train_lstm_model.py --data_dir ./processed --output_dir ./models --baseline_path ./models/baseline_results.json
+```
+Trains an LSTM directly on the raw windowed sequences (no flattening),
+evaluates with the same metrics as the baseline models, and automatically
+compares results against `baseline_results.json`. Saves the trained model
+to `models/lstm_model.pt` and the combined comparison to
+`models/all_results.json`.
+
 ## Results
 
 ### Baseline models (Week 2)
@@ -71,6 +81,20 @@ official C-MAPSS asymmetric scoring function, saves results to
 penalizes late predictions (predicting an engine will last longer than it
 actually does) far more heavily than early ones, reflecting real
 maintenance safety costs.*
+
+### LSTM vs. baseline (Week 3)
+
+| Model | Test RMSE | Test Score |
+|---|---|---|
+| Random Forest | 18.10 | 607.18 |
+| XGBoost | 17.32 | 559.93 |
+| **LSTM** | **15.11** | **405.31** |
+
+The LSTM improves RMSE by ~13% and cuts the C-MAPSS score by ~28% compared
+to XGBoost. This tracks with expectations — the LSTM learns directly from
+the raw temporal sequence, while the tree-based models only see flattened
+summary statistics (mean / std / last value / trend) per window, which
+necessarily discards some time-series structure.
 
 ## Preprocessing notes
 
@@ -88,7 +112,7 @@ maintenance safety costs.*
 
 - [x] **Week 1** — Data preprocessing pipeline
 - [x] **Week 2** — Baseline models (Random Forest, XGBoost)
-- [ ] **Week 3** — LSTM/GRU deep learning model
+- [x] **Week 3** — LSTM deep learning model
 - [ ] **Week 4** — Backend API (FastAPI) + database
 - [ ] **Week 5** — Frontend dashboard (React)
 - [ ] **Week 6** — Simulated real-time streaming layer
@@ -105,16 +129,18 @@ predictive-maintenance-cmapss/
 ├── data/                     # raw C-MAPSS files (not committed)
 ├── src/
 │   ├── preprocess_cmapss.py
-│   └── train_baseline_model.py
+│   ├── train_baseline_model.py
+│   └── train_lstm_model.py
 ├── processed/
 │   └── config.json           # feature cols, window size, clip value
 └── models/
-    └── baseline_results.json # RMSE / score per model
+    ├── baseline_results.json # RMSE / score for RF, XGBoost
+    └── all_results.json      # RMSE / score for RF, XGBoost, LSTM
 ```
 
 ## Tech stack
 
-- **Data/ML:** Python, pandas, scikit-learn, XGBoost (PyTorch for LSTM, coming Week 3)
+- **Data/ML:** Python, pandas, scikit-learn, XGBoost, PyTorch (LSTM)
 - **Backend:** FastAPI (coming Week 4)
 - **Database:** PostgreSQL (coming Week 4)
 - **Frontend:** React (coming Week 5)
