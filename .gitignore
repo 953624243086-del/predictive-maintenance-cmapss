@@ -1,0 +1,9 @@
+data/*.txt
+processed/*.npy
+models/*.pkl
+processed/*.pkl
+__pycache__/
+*.pyc
+venv/
+.ipynb_checkpoints/
+.DS_Store
